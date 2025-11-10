@@ -3,6 +3,8 @@ import authRoutes from './auth.routes';
 import questionnaireRoutes from './questionnaire.routes';
 import campaignRoutes from './campaign.routes';
 import analyticsRoutes from './analytics.routes';
+import abtestRoutes from './abtest.routes';
+import alertRoutes from './alert.routes';
 
 const router = Router();
 
@@ -10,6 +12,8 @@ router.use('/auth', authRoutes);
 router.use('/questionnaire', questionnaireRoutes);
 router.use('/campaigns', campaignRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/abtests', abtestRoutes);
+router.use('/alerts', alertRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

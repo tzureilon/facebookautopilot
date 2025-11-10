@@ -151,6 +151,147 @@ class ApiClient {
     const response = await this.client.get('/analytics/actions');
     return response.data;
   }
+
+  // A/B Testing endpoints
+  async createABTest(data: any) {
+    const response = await this.client.post('/abtests', data);
+    return response.data;
+  }
+
+  async getABTests() {
+    const response = await this.client.get('/abtests');
+    return response.data;
+  }
+
+  async getABTest(id: string) {
+    const response = await this.client.get(`/abtests/${id}`);
+    return response.data;
+  }
+
+  async getABTestsByCampaign(campaignId: string) {
+    const response = await this.client.get(`/abtests/campaign/${campaignId}`);
+    return response.data;
+  }
+
+  async startABTest(id: string) {
+    const response = await this.client.post(`/abtests/${id}/start`);
+    return response.data;
+  }
+
+  async pauseABTest(id: string) {
+    const response = await this.client.post(`/abtests/${id}/pause`);
+    return response.data;
+  }
+
+  async getABTestStatistics(id: string) {
+    const response = await this.client.get(`/abtests/${id}/statistics`);
+    return response.data;
+  }
+
+  async getABTestReport(id: string) {
+    const response = await this.client.get(`/abtests/${id}/report`);
+    return response.data;
+  }
+
+  async updateABTestMetrics(id: string) {
+    const response = await this.client.post(`/abtests/${id}/update-metrics`);
+    return response.data;
+  }
+
+  async deleteABTest(id: string) {
+    const response = await this.client.delete(`/abtests/${id}`);
+    return response.data;
+  }
+
+  // Alert Rules endpoints
+  async createAlertRule(data: any) {
+    const response = await this.client.post('/alerts/rules', data);
+    return response.data;
+  }
+
+  async getAlertRules() {
+    const response = await this.client.get('/alerts/rules');
+    return response.data;
+  }
+
+  async getAlertRule(id: string) {
+    const response = await this.client.get(`/alerts/rules/${id}`);
+    return response.data;
+  }
+
+  async updateAlertRule(id: string, data: any) {
+    const response = await this.client.put(`/alerts/rules/${id}`, data);
+    return response.data;
+  }
+
+  async toggleAlertRule(id: string) {
+    const response = await this.client.post(`/alerts/rules/${id}/toggle`);
+    return response.data;
+  }
+
+  async testAlertRule(id: string) {
+    const response = await this.client.post(`/alerts/rules/${id}/test`);
+    return response.data;
+  }
+
+  async deleteAlertRule(id: string) {
+    const response = await this.client.delete(`/alerts/rules/${id}`);
+    return response.data;
+  }
+
+  // Alert Notifications endpoints
+  async getAlertNotifications(status?: string) {
+    const params = status ? { status } : {};
+    const response = await this.client.get('/alerts/notifications', { params });
+    return response.data;
+  }
+
+  async getAlertNotification(id: string) {
+    const response = await this.client.get(`/alerts/notifications/${id}`);
+    return response.data;
+  }
+
+  async markNotificationAsRead(id: string) {
+    const response = await this.client.post(`/alerts/notifications/${id}/read`);
+    return response.data;
+  }
+
+  async acknowledgeNotification(id: string) {
+    const response = await this.client.post(`/alerts/notifications/${id}/acknowledge`);
+    return response.data;
+  }
+
+  async resolveNotification(id: string) {
+    const response = await this.client.post(`/alerts/notifications/${id}/resolve`);
+    return response.data;
+  }
+
+  async markAllNotificationsAsRead() {
+    const response = await this.client.post('/alerts/notifications/mark-all-read');
+    return response.data;
+  }
+
+  async getUnreadNotificationCount() {
+    const response = await this.client.get('/alerts/notifications/unread-count');
+    return response.data;
+  }
+
+  // Notification Preferences endpoints
+  async getNotificationPreferences() {
+    const response = await this.client.get('/alerts/preferences');
+    return response.data;
+  }
+
+  async updateNotificationPreferences(data: any) {
+    const response = await this.client.put('/alerts/preferences', data);
+    return response.data;
+  }
+
+  // Anomaly Detection endpoints
+  async detectAnomalies() {
+    const response = await this.client.get('/alerts/anomalies');
+    return response.data;
+  }
 }
 
 export const apiClient = new ApiClient();

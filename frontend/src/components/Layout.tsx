@@ -42,6 +42,18 @@ export default function Layout({ children }: LayoutProps) {
                   Campaigns
                 </Link>
                 <Link
+                  href="/abtests"
+                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                >
+                  A/B Tests
+                </Link>
+                <Link
+                  href="/alerts"
+                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                >
+                  Alerts
+                </Link>
+                <Link
                   href="/questionnaire"
                   className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                 >

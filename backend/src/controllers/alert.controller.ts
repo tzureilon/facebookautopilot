@@ -1,0 +1,423 @@
+import { Response } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
+import { AlertRuleModel, AlertNotificationModel, NotificationPreferencesModel } from '../models/Alert.model';
+import AlertRulesEngine from '../services/AlertRulesEngine';
+import logger from '../utils/logger';
+
+export class AlertController {
+  /**
+   * Create alert rule
+   */
+  async createRule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      const ruleData = req.body;
+
+      const rule = await AlertRuleModel.create({
+        ...ruleData,
+        userId,
+        triggerCount: 0,
+      });
+
+      logger.info(`Alert rule created: ${rule._id}`);
+      res.status(201).json(rule);
+    } catch (error: any) {
+      logger.error('Create alert rule error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Get all alert rules for user
+   */
+  async getRules(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      const rules = await AlertRuleModel.find({ userId }).sort({ createdAt: -1 });
+
+      res.json(rules);
+    } catch (error: any) {
+      logger.error('Get alert rules error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Get alert rule by ID
+   */
+  async getRule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      const rule = await AlertRuleModel.findOne({ _id: id, userId });
+
+      if (!rule) {
+        res.status(404).json({ error: 'Alert rule not found' });
+        return;
+      }
+
+      res.json(rule);
+    } catch (error: any) {
+      logger.error('Get alert rule error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Update alert rule
+   */
+  async updateRule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+      const updates = req.body;
+
+      const rule = await AlertRuleModel.findOneAndUpdate(
+        { _id: id, userId },
+        { ...updates, updatedAt: new Date() },
+        { new: true, runValidators: true }
+      );
+
+      if (!rule) {
+        res.status(404).json({ error: 'Alert rule not found' });
+        return;
+      }
+
+      logger.info(`Alert rule updated: ${id}`);
+      res.json(rule);
+    } catch (error: any) {
+      logger.error('Update alert rule error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Toggle alert rule
+   */
+  async toggleRule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      const rule = await AlertRuleModel.findOne({ _id: id, userId });
+
+      if (!rule) {
+        res.status(404).json({ error: 'Alert rule not found' });
+        return;
+      }
+
+      rule.enabled = !rule.enabled;
+      await rule.save();
+
+      logger.info(`Alert rule ${rule.enabled ? 'enabled' : 'disabled'}: ${id}`);
+      res.json(rule);
+    } catch (error: any) {
+      logger.error('Toggle alert rule error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Delete alert rule
+   */
+  async deleteRule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      const rule = await AlertRuleModel.findOneAndDelete({ _id: id, userId });
+
+      if (!rule) {
+        res.status(404).json({ error: 'Alert rule not found' });
+        return;
+      }
+
+      logger.info(`Alert rule deleted: ${id}`);
+      res.json({ message: 'Alert rule deleted successfully' });
+    } catch (error: any) {
+      logger.error('Delete alert rule error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Get all notifications for user
+   */
+  async getNotifications(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      const { status, limit = 50 } = req.query;
+
+      const query: any = { userId };
+      if (status) {
+        query.status = status;
+      }
+
+      const notifications = await AlertNotificationModel.find(query)
+        .sort({ createdAt: -1 })
+        .limit(Number(limit));
+
+      res.json(notifications);
+    } catch (error: any) {
+      logger.error('Get notifications error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Get notification by ID
+   */
+  async getNotification(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      const notification = await AlertNotificationModel.findOne({ _id: id, userId });
+
+      if (!notification) {
+        res.status(404).json({ error: 'Notification not found' });
+        return;
+      }
+
+      // Mark as read
+      if (notification.status === 'unread') {
+        notification.status = 'read';
+        await notification.save();
+      }
+
+      res.json(notification);
+    } catch (error: any) {
+      logger.error('Get notification error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Mark notification as read
+   */
+  async markAsRead(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      const notification = await AlertNotificationModel.findOneAndUpdate(
+        { _id: id, userId },
+        { status: 'read' },
+        { new: true }
+      );
+
+      if (!notification) {
+        res.status(404).json({ error: 'Notification not found' });
+        return;
+      }
+
+      res.json(notification);
+    } catch (error: any) {
+      logger.error('Mark as read error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Acknowledge notification
+   */
+  async acknowledgeNotification(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      const notification = await AlertNotificationModel.findOneAndUpdate(
+        { _id: id, userId },
+        {
+          status: 'acknowledged',
+          acknowledgedAt: new Date(),
+          acknowledgedBy: userId,
+        },
+        { new: true }
+      );
+
+      if (!notification) {
+        res.status(404).json({ error: 'Notification not found' });
+        return;
+      }
+
+      res.json(notification);
+    } catch (error: any) {
+      logger.error('Acknowledge notification error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Resolve notification
+   */
+  async resolveNotification(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      const notification = await AlertNotificationModel.findOneAndUpdate(
+        { _id: id, userId },
+        {
+          status: 'resolved',
+          resolvedAt: new Date(),
+        },
+        { new: true }
+      );
+
+      if (!notification) {
+        res.status(404).json({ error: 'Notification not found' });
+        return;
+      }
+
+      res.json(notification);
+    } catch (error: any) {
+      logger.error('Resolve notification error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Mark all notifications as read
+   */
+  async markAllAsRead(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      await AlertNotificationModel.updateMany(
+        { userId, status: 'unread' },
+        { status: 'read' }
+      );
+
+      res.json({ message: 'All notifications marked as read' });
+    } catch (error: any) {
+      logger.error('Mark all as read error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Get unread notification count
+   */
+  async getUnreadCount(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      const count = await AlertNotificationModel.countDocuments({
+        userId,
+        status: 'unread',
+      });
+
+      res.json({ count });
+    } catch (error: any) {
+      logger.error('Get unread count error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Get notification preferences
+   */
+  async getPreferences(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      let preferences = await NotificationPreferencesModel.findOne({ userId });
+
+      if (!preferences) {
+        // Create default preferences
+        preferences = await NotificationPreferencesModel.create({
+          userId,
+          channels: {
+            email: { enabled: true, address: req.user?.email, digest: false, digestTime: '09:00' },
+            sms: { enabled: false, phoneNumber: '', onlyCritical: true },
+            slack: { enabled: false, webhookUrl: '', channels: [] },
+            discord: { enabled: false, webhookUrl: '' },
+            teams: { enabled: false, webhookUrl: '' },
+            inApp: { enabled: true, sound: true, desktop: true },
+          },
+          quietHours: { enabled: false, start: '22:00', end: '08:00', timezone: 'UTC' },
+          categories: {
+            performance: true,
+            budget: true,
+            anomalies: true,
+            abTests: true,
+            system: true,
+          },
+        });
+      }
+
+      res.json(preferences);
+    } catch (error: any) {
+      logger.error('Get preferences error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Update notification preferences
+   */
+  async updatePreferences(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      const updates = req.body;
+
+      const preferences = await NotificationPreferencesModel.findOneAndUpdate(
+        { userId },
+        updates,
+        { new: true, upsert: true, runValidators: true }
+      );
+
+      logger.info(`Notification preferences updated for user: ${userId}`);
+      res.json(preferences);
+    } catch (error: any) {
+      logger.error('Update preferences error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Detect anomalies
+   */
+  async detectAnomalies(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      const anomalies = await AlertRulesEngine.detectAnomalies(userId!);
+
+      res.json(anomalies);
+    } catch (error: any) {
+      logger.error('Detect anomalies error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Test alert rule
+   */
+  async testRule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      const rule = await AlertRuleModel.findOne({ _id: id, userId });
+
+      if (!rule) {
+        res.status(404).json({ error: 'Alert rule not found' });
+        return;
+      }
+
+      // Evaluate the rule immediately
+      await AlertRulesEngine.evaluateRule(rule);
+
+      res.json({ message: 'Alert rule test triggered successfully' });
+    } catch (error: any) {
+      logger.error('Test alert rule error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
+
+export default new AlertController();
