@@ -13,12 +13,26 @@ class ApiClient {
       },
     });
 
-    // Add auth token interceptor
+    // Add auth token and client context interceptor
     this.client.interceptors.request.use((config) => {
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Add client ID to headers if selected
+      const clientStorage = localStorage.getItem('client-storage');
+      if (clientStorage) {
+        try {
+          const { state } = JSON.parse(clientStorage);
+          if (state?.selectedClient?.id) {
+            config.headers['x-client-id'] = state.selectedClient.id;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+
       return config;
     });
 
@@ -290,6 +304,52 @@ class ApiClient {
   // Anomaly Detection endpoints
   async detectAnomalies() {
     const response = await this.client.get('/alerts/anomalies');
+    return response.data;
+  }
+
+  // Client Management endpoints
+  async getClients() {
+    const response = await this.client.get('/clients');
+    return response.data;
+  }
+
+  async getClient(id: string) {
+    const response = await this.client.get(`/clients/${id}`);
+    return response.data;
+  }
+
+  async getClientWithStats(id: string) {
+    const response = await this.client.get(`/clients/${id}/stats`);
+    return response.data;
+  }
+
+  async getClientsSummary() {
+    const response = await this.client.get('/clients/summary');
+    return response.data;
+  }
+
+  async createClient(data: any) {
+    const response = await this.client.post('/clients', data);
+    return response.data;
+  }
+
+  async updateClient(id: string, data: any) {
+    const response = await this.client.put(`/clients/${id}`, data);
+    return response.data;
+  }
+
+  async updateClientStatus(id: string, status: string) {
+    const response = await this.client.put(`/clients/${id}/status`, { status });
+    return response.data;
+  }
+
+  async updateClientSettings(id: string, settings: any) {
+    const response = await this.client.put(`/clients/${id}/settings`, settings);
+    return response.data;
+  }
+
+  async deleteClient(id: string) {
+    const response = await this.client.delete(`/clients/${id}`);
     return response.data;
   }
 }

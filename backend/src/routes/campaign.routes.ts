@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import campaignController from '../controllers/campaign.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { extractClientContext } from '../middleware/clientContext.middleware';
 
 const router = Router();
 
 router.use(authenticate);
+router.use(extractClientContext);
 
 router.post('/', campaignController.create.bind(campaignController));
 router.get('/', campaignController.getAll.bind(campaignController));

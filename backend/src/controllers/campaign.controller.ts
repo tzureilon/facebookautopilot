@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth.middleware';
+import { ClientRequest } from '../middleware/clientContext.middleware';
 import { CampaignModel, AdSetModel, AdModel } from '../models/Campaign.model';
 import Questionnaire from '../models/Questionnaire.model';
 import MetaApiService from '../services/MetaApiService';
@@ -12,13 +12,17 @@ export class CampaignController {
   /**
    * Create campaign from questionnaire
    */
-  async create(req: AuthRequest, res: Response): Promise<void> {
+  async create(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { questionnaireId } = req.body;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
       // Get questionnaire
-      const questionnaire = await Questionnaire.findOne({ _id: questionnaireId, userId });
+      const query: any = { _id: questionnaireId, userId };
+      if (clientId) query.clientId = clientId;
+
+      const questionnaire = await Questionnaire.findOne(query);
       if (!questionnaire) {
         res.status(404).json({ error: 'Questionnaire not found' });
         return;
@@ -50,6 +54,7 @@ export class CampaignController {
       const campaign = await CampaignModel.create({
         questionnaireId: questionnaire._id,
         userId,
+        clientId,
         metaCampaignId: metaCampaign.id,
         name: structure.campaign.name,
         objective: structure.campaign.objective,
@@ -144,11 +149,15 @@ export class CampaignController {
   /**
    * Get all campaigns for user
    */
-  async getAll(req: AuthRequest, res: Response): Promise<void> {
+  async getAll(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const campaigns = await CampaignModel.find({ userId })
+      const query: any = { userId };
+      if (clientId) query.clientId = clientId;
+
+      const campaigns = await CampaignModel.find(query)
         .populate('adSets')
         .sort({ createdAt: -1 });
 
@@ -162,12 +171,16 @@ export class CampaignController {
   /**
    * Get campaign by ID
    */
-  async getById(req: AuthRequest, res: Response): Promise<void> {
+  async getById(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const campaign = await CampaignModel.findOne({ _id: id, userId })
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const campaign = await CampaignModel.findOne(query)
         .populate({
           path: 'adSets',
           populate: { path: 'ads' },
@@ -188,13 +201,17 @@ export class CampaignController {
   /**
    * Update campaign status
    */
-  async updateStatus(req: AuthRequest, res: Response): Promise<void> {
+  async updateStatus(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { status } = req.body;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const campaign = await CampaignModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const campaign = await CampaignModel.findOne(query);
 
       if (!campaign) {
         res.status(404).json({ error: 'Campaign not found' });
@@ -228,12 +245,16 @@ export class CampaignController {
   /**
    * Delete campaign
    */
-  async delete(req: AuthRequest, res: Response): Promise<void> {
+  async delete(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const campaign = await CampaignModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const campaign = await CampaignModel.findOne(query);
 
       if (!campaign) {
         res.status(404).json({ error: 'Campaign not found' });

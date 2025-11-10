@@ -10,6 +10,11 @@ const QuestionnaireSchema = new Schema<IQuestionnaire>(
       required: true,
       ref: 'User',
     },
+    clientId: {
+      type: String,
+      ref: 'Client',
+      index: true,
+    },
     businessInfo: {
       businessName: { type: String, required: true },
       industry: { type: String, required: true },

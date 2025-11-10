@@ -125,6 +125,11 @@ const CampaignSchema = new Schema<ICampaign>(
       required: true,
       ref: 'User',
     },
+    clientId: {
+      type: String,
+      ref: 'Client',
+      index: true,
+    },
     metaCampaignId: String,
     name: { type: String, required: true },
     objective: { type: String, required: true },

@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth.middleware';
+import { ClientRequest } from '../middleware/clientContext.middleware';
 import ABTestingService from '../services/ABTestingService';
 import { ABTestModel } from '../models/ABTest.model';
 import logger from '../utils/logger';
@@ -8,12 +8,13 @@ export class ABTestController {
   /**
    * Create new A/B test
    */
-  async create(req: AuthRequest, res: Response): Promise<void> {
+  async create(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
       const testConfig = req.body;
 
-      const test = await ABTestingService.createTest(userId!, testConfig);
+      const test = await ABTestingService.createTest(userId!, { ...testConfig, clientId });
 
       logger.info(`A/B test created: ${test._id}`);
       res.status(201).json(test);
@@ -26,11 +27,15 @@ export class ABTestController {
   /**
    * Get all tests for user
    */
-  async getAll(req: AuthRequest, res: Response): Promise<void> {
+  async getAll(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const tests = await ABTestingService.getTestsByUser(userId!);
+      const query: any = { userId };
+      if (clientId) query.clientId = clientId;
+
+      const tests = await ABTestModel.find(query).sort({ createdAt: -1 });
 
       res.json(tests);
     } catch (error: any) {
@@ -42,12 +47,16 @@ export class ABTestController {
   /**
    * Get test by ID
    */
-  async getById(req: AuthRequest, res: Response): Promise<void> {
+  async getById(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const test = await ABTestModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const test = await ABTestModel.findOne(query);
 
       if (!test) {
         res.status(404).json({ error: 'Test not found' });
@@ -64,11 +73,16 @@ export class ABTestController {
   /**
    * Get tests for a campaign
    */
-  async getByCampaign(req: AuthRequest, res: Response): Promise<void> {
+  async getByCampaign(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { campaignId } = req.params;
+      const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const tests = await ABTestingService.getTestsByCampaign(campaignId);
+      const query: any = { campaignId, userId };
+      if (clientId) query.clientId = clientId;
+
+      const tests = await ABTestModel.find(query).sort({ createdAt: -1 });
 
       res.json(tests);
     } catch (error: any) {
@@ -80,13 +94,17 @@ export class ABTestController {
   /**
    * Start test
    */
-  async start(req: AuthRequest, res: Response): Promise<void> {
+  async start(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
       // Verify ownership
-      const test = await ABTestModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const test = await ABTestModel.findOne(query);
       if (!test) {
         res.status(404).json({ error: 'Test not found' });
         return;
@@ -104,13 +122,17 @@ export class ABTestController {
   /**
    * Pause test
    */
-  async pause(req: AuthRequest, res: Response): Promise<void> {
+  async pause(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
       // Verify ownership
-      const test = await ABTestModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const test = await ABTestModel.findOne(query);
       if (!test) {
         res.status(404).json({ error: 'Test not found' });
         return;
@@ -128,12 +150,16 @@ export class ABTestController {
   /**
    * Get test statistics
    */
-  async getStatistics(req: AuthRequest, res: Response): Promise<void> {
+  async getStatistics(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const test = await ABTestModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const test = await ABTestModel.findOne(query);
       if (!test) {
         res.status(404).json({ error: 'Test not found' });
         return;
@@ -160,12 +186,16 @@ export class ABTestController {
   /**
    * Get test report
    */
-  async getReport(req: AuthRequest, res: Response): Promise<void> {
+  async getReport(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const test = await ABTestModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const test = await ABTestModel.findOne(query);
       if (!test) {
         res.status(404).json({ error: 'Test not found' });
         return;
@@ -183,12 +213,16 @@ export class ABTestController {
   /**
    * Update test metrics
    */
-  async updateMetrics(req: AuthRequest, res: Response): Promise<void> {
+  async updateMetrics(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const test = await ABTestModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const test = await ABTestModel.findOne(query);
       if (!test) {
         res.status(404).json({ error: 'Test not found' });
         return;
@@ -206,12 +240,16 @@ export class ABTestController {
   /**
    * Delete test
    */
-  async delete(req: AuthRequest, res: Response): Promise<void> {
+  async delete(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const test = await ABTestModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const test = await ABTestModel.findOne(query);
       if (!test) {
         res.status(404).json({ error: 'Test not found' });
         return;

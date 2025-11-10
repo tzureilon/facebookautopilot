@@ -5,7 +5,7 @@ export interface User {
   firstName: string;
   lastName: string;
   company?: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'agency';
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -17,7 +17,7 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   company?: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'agency';
 }
 
 export interface AuthTokens {

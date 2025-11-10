@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth.middleware';
+import { ClientRequest } from '../middleware/clientContext.middleware';
 import { AlertRuleModel, AlertNotificationModel, NotificationPreferencesModel } from '../models/Alert.model';
 import AlertRulesEngine from '../services/AlertRulesEngine';
 import logger from '../utils/logger';
@@ -8,14 +8,16 @@ export class AlertController {
   /**
    * Create alert rule
    */
-  async createRule(req: AuthRequest, res: Response): Promise<void> {
+  async createRule(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
       const ruleData = req.body;
 
       const rule = await AlertRuleModel.create({
         ...ruleData,
         userId,
+        clientId,
         triggerCount: 0,
       });
 
@@ -30,11 +32,15 @@ export class AlertController {
   /**
    * Get all alert rules for user
    */
-  async getRules(req: AuthRequest, res: Response): Promise<void> {
+  async getRules(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const rules = await AlertRuleModel.find({ userId }).sort({ createdAt: -1 });
+      const query: any = { userId };
+      if (clientId) query.clientId = clientId;
+
+      const rules = await AlertRuleModel.find(query).sort({ createdAt: -1 });
 
       res.json(rules);
     } catch (error: any) {
@@ -46,12 +52,16 @@ export class AlertController {
   /**
    * Get alert rule by ID
    */
-  async getRule(req: AuthRequest, res: Response): Promise<void> {
+  async getRule(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const rule = await AlertRuleModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const rule = await AlertRuleModel.findOne(query);
 
       if (!rule) {
         res.status(404).json({ error: 'Alert rule not found' });
@@ -68,14 +78,18 @@ export class AlertController {
   /**
    * Update alert rule
    */
-  async updateRule(req: AuthRequest, res: Response): Promise<void> {
+  async updateRule(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
       const updates = req.body;
 
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
       const rule = await AlertRuleModel.findOneAndUpdate(
-        { _id: id, userId },
+        query,
         { ...updates, updatedAt: new Date() },
         { new: true, runValidators: true }
       );
@@ -96,12 +110,16 @@ export class AlertController {
   /**
    * Toggle alert rule
    */
-  async toggleRule(req: AuthRequest, res: Response): Promise<void> {
+  async toggleRule(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const rule = await AlertRuleModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const rule = await AlertRuleModel.findOne(query);
 
       if (!rule) {
         res.status(404).json({ error: 'Alert rule not found' });
@@ -122,12 +140,16 @@ export class AlertController {
   /**
    * Delete alert rule
    */
-  async deleteRule(req: AuthRequest, res: Response): Promise<void> {
+  async deleteRule(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const rule = await AlertRuleModel.findOneAndDelete({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const rule = await AlertRuleModel.findOneAndDelete(query);
 
       if (!rule) {
         res.status(404).json({ error: 'Alert rule not found' });
@@ -145,12 +167,14 @@ export class AlertController {
   /**
    * Get all notifications for user
    */
-  async getNotifications(req: AuthRequest, res: Response): Promise<void> {
+  async getNotifications(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
       const { status, limit = 50 } = req.query;
 
       const query: any = { userId };
+      if (clientId) query.clientId = clientId;
       if (status) {
         query.status = status;
       }
@@ -169,12 +193,16 @@ export class AlertController {
   /**
    * Get notification by ID
    */
-  async getNotification(req: AuthRequest, res: Response): Promise<void> {
+  async getNotification(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const notification = await AlertNotificationModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const notification = await AlertNotificationModel.findOne(query);
 
       if (!notification) {
         res.status(404).json({ error: 'Notification not found' });
@@ -197,13 +225,17 @@ export class AlertController {
   /**
    * Mark notification as read
    */
-  async markAsRead(req: AuthRequest, res: Response): Promise<void> {
+  async markAsRead(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
+
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
 
       const notification = await AlertNotificationModel.findOneAndUpdate(
-        { _id: id, userId },
+        query,
         { status: 'read' },
         { new: true }
       );
@@ -223,13 +255,17 @@ export class AlertController {
   /**
    * Acknowledge notification
    */
-  async acknowledgeNotification(req: AuthRequest, res: Response): Promise<void> {
+  async acknowledgeNotification(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
+
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
 
       const notification = await AlertNotificationModel.findOneAndUpdate(
-        { _id: id, userId },
+        query,
         {
           status: 'acknowledged',
           acknowledgedAt: new Date(),
@@ -253,13 +289,17 @@ export class AlertController {
   /**
    * Resolve notification
    */
-  async resolveNotification(req: AuthRequest, res: Response): Promise<void> {
+  async resolveNotification(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
+
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
 
       const notification = await AlertNotificationModel.findOneAndUpdate(
-        { _id: id, userId },
+        query,
         {
           status: 'resolved',
           resolvedAt: new Date(),
@@ -282,12 +322,16 @@ export class AlertController {
   /**
    * Mark all notifications as read
    */
-  async markAllAsRead(req: AuthRequest, res: Response): Promise<void> {
+  async markAllAsRead(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
+
+      const query: any = { userId, status: 'unread' };
+      if (clientId) query.clientId = clientId;
 
       await AlertNotificationModel.updateMany(
-        { userId, status: 'unread' },
+        query,
         { status: 'read' }
       );
 
@@ -301,14 +345,15 @@ export class AlertController {
   /**
    * Get unread notification count
    */
-  async getUnreadCount(req: AuthRequest, res: Response): Promise<void> {
+  async getUnreadCount(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const count = await AlertNotificationModel.countDocuments({
-        userId,
-        status: 'unread',
-      });
+      const query: any = { userId, status: 'unread' };
+      if (clientId) query.clientId = clientId;
+
+      const count = await AlertNotificationModel.countDocuments(query);
 
       res.json({ count });
     } catch (error: any) {
@@ -320,16 +365,21 @@ export class AlertController {
   /**
    * Get notification preferences
    */
-  async getPreferences(req: AuthRequest, res: Response): Promise<void> {
+  async getPreferences(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      let preferences = await NotificationPreferencesModel.findOne({ userId });
+      const query: any = { userId };
+      if (clientId) query.clientId = clientId;
+
+      let preferences = await NotificationPreferencesModel.findOne(query);
 
       if (!preferences) {
         // Create default preferences
         preferences = await NotificationPreferencesModel.create({
           userId,
+          clientId,
           channels: {
             email: { enabled: true, address: req.user?.email, digest: false, digestTime: '09:00' },
             sms: { enabled: false, phoneNumber: '', onlyCritical: true },
@@ -359,13 +409,17 @@ export class AlertController {
   /**
    * Update notification preferences
    */
-  async updatePreferences(req: AuthRequest, res: Response): Promise<void> {
+  async updatePreferences(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
       const updates = req.body;
 
+      const query: any = { userId };
+      if (clientId) query.clientId = clientId;
+
       const preferences = await NotificationPreferencesModel.findOneAndUpdate(
-        { userId },
+        query,
         updates,
         { new: true, upsert: true, runValidators: true }
       );
@@ -381,11 +435,12 @@ export class AlertController {
   /**
    * Detect anomalies
    */
-  async detectAnomalies(req: AuthRequest, res: Response): Promise<void> {
+  async detectAnomalies(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const anomalies = await AlertRulesEngine.detectAnomalies(userId!);
+      const anomalies = await AlertRulesEngine.detectAnomalies(userId!, clientId);
 
       res.json(anomalies);
     } catch (error: any) {
@@ -397,12 +452,16 @@ export class AlertController {
   /**
    * Test alert rule
    */
-  async testRule(req: AuthRequest, res: Response): Promise<void> {
+  async testRule(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const rule = await AlertRuleModel.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const rule = await AlertRuleModel.findOne(query);
 
       if (!rule) {
         res.status(404).json({ error: 'Alert rule not found' });

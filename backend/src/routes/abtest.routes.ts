@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import abtestController from '../controllers/abtest.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { extractClientContext } from '../middleware/clientContext.middleware';
 
 const router = Router();
 
 router.use(authenticate);
+router.use(extractClientContext);
 
 // Test management
 router.post('/', abtestController.create.bind(abtestController));

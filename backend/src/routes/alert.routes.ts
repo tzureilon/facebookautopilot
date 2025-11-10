@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import alertController from '../controllers/alert.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { extractClientContext } from '../middleware/clientContext.middleware';
 
 const router = Router();
 
 router.use(authenticate);
+router.use(extractClientContext);
 
 // Alert rules
 router.post('/rules', alertController.createRule.bind(alertController));

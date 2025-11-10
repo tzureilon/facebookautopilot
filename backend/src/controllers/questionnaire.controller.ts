@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth.middleware';
+import { ClientRequest } from '../middleware/clientContext.middleware';
 import Questionnaire from '../models/Questionnaire.model';
 import logger from '../utils/logger';
 
@@ -7,14 +7,16 @@ export class QuestionnaireController {
   /**
    * Create new questionnaire
    */
-  async create(req: AuthRequest, res: Response): Promise<void> {
+  async create(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
       const questionnaireData = req.body;
 
       const questionnaire = await Questionnaire.create({
         ...questionnaireData,
         userId,
+        clientId,
         status: 'draft',
       });
 
@@ -30,11 +32,15 @@ export class QuestionnaireController {
   /**
    * Get all questionnaires for user
    */
-  async getAll(req: AuthRequest, res: Response): Promise<void> {
+  async getAll(req: ClientRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const questionnaires = await Questionnaire.find({ userId }).sort({ createdAt: -1 });
+      const query: any = { userId };
+      if (clientId) query.clientId = clientId;
+
+      const questionnaires = await Questionnaire.find(query).sort({ createdAt: -1 });
 
       res.json(questionnaires);
     } catch (error: any) {
@@ -46,12 +52,16 @@ export class QuestionnaireController {
   /**
    * Get questionnaire by ID
    */
-  async getById(req: AuthRequest, res: Response): Promise<void> {
+  async getById(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const questionnaire = await Questionnaire.findOne({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const questionnaire = await Questionnaire.findOne(query);
 
       if (!questionnaire) {
         res.status(404).json({ error: 'Questionnaire not found' });
@@ -68,14 +78,18 @@ export class QuestionnaireController {
   /**
    * Update questionnaire
    */
-  async update(req: AuthRequest, res: Response): Promise<void> {
+  async update(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
       const updates = req.body;
 
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
       const questionnaire = await Questionnaire.findOneAndUpdate(
-        { _id: id, userId },
+        query,
         { ...updates, updatedAt: new Date() },
         { new: true, runValidators: true }
       );
@@ -97,13 +111,17 @@ export class QuestionnaireController {
   /**
    * Submit questionnaire
    */
-  async submit(req: AuthRequest, res: Response): Promise<void> {
+  async submit(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
+
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
 
       const questionnaire = await Questionnaire.findOneAndUpdate(
-        { _id: id, userId },
+        query,
         { status: 'submitted', updatedAt: new Date() },
         { new: true }
       );
@@ -125,12 +143,16 @@ export class QuestionnaireController {
   /**
    * Delete questionnaire
    */
-  async delete(req: AuthRequest, res: Response): Promise<void> {
+  async delete(req: ClientRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const clientId = req.clientId;
 
-      const questionnaire = await Questionnaire.findOneAndDelete({ _id: id, userId });
+      const query: any = { _id: id, userId };
+      if (clientId) query.clientId = clientId;
+
+      const questionnaire = await Questionnaire.findOneAndDelete(query);
 
       if (!questionnaire) {
         res.status(404).json({ error: 'Questionnaire not found' });
@@ -149,7 +171,7 @@ export class QuestionnaireController {
   /**
    * Upload creative asset
    */
-  async uploadAsset(req: AuthRequest, res: Response): Promise<void> {
+  async uploadAsset(req: ClientRequest, res: Response): Promise<void> {
     try {
       const file = req.file;
 

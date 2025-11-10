@@ -44,6 +44,11 @@ const AlertRuleSchema = new Schema<IAlertRule>(
       required: true,
       ref: 'User',
     },
+    clientId: {
+      type: String,
+      ref: 'Client',
+      index: true,
+    },
     name: {
       type: String,
       required: true,
