@@ -8,6 +8,7 @@ export interface IUser extends Document {
   lastName: string;
   company?: string;
   role: 'admin' | 'user';
+  isAgency: boolean;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -46,6 +47,10 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum: ['admin', 'user'],
       default: 'user',
+    },
+    isAgency: {
+      type: Boolean,
+      default: false,
     },
     isActive: {
       type: Boolean,

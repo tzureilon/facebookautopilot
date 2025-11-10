@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
     email: string;
     role: string;
   };
+  client?: any;
 }
 
 export const authenticate = async (
@@ -54,3 +55,6 @@ export const authorize = (...roles: string[]) => {
     next();
   };
 };
+
+// Export alias for compatibility
+export const authMiddleware = authenticate;

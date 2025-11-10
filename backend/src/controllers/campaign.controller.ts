@@ -50,6 +50,7 @@ export class CampaignController {
       const campaign = await CampaignModel.create({
         questionnaireId: questionnaire._id,
         userId,
+        clientId: questionnaire.clientId,
         metaCampaignId: metaCampaign.id,
         name: structure.campaign.name,
         objective: structure.campaign.objective,
@@ -75,6 +76,7 @@ export class CampaignController {
         // Create ad set in database
         const adSet = await AdSetModel.create({
           campaignId: campaign._id,
+          clientId: questionnaire.clientId,
           metaAdSetId: metaAdSet.id,
           name: adSetData.name,
           status: 'PAUSED',
@@ -114,6 +116,7 @@ export class CampaignController {
           // Create ad in database
           const ad = await AdModel.create({
             adSetId: adSet._id,
+            clientId: questionnaire.clientId,
             metaAdId: metaAd.id,
             name: adData.name,
             status: 'PAUSED',
@@ -147,8 +150,15 @@ export class CampaignController {
   async getAll(req: AuthRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const { clientId } = req.query;
 
-      const campaigns = await CampaignModel.find({ userId })
+      // Build query
+      const query: any = { userId };
+      if (clientId) {
+        query.clientId = clientId;
+      }
+
+      const campaigns = await CampaignModel.find(query)
         .populate('adSets')
         .sort({ createdAt: -1 });
 

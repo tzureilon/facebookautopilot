@@ -44,6 +44,11 @@ const ABTestSchema = new Schema<IABTest>(
       required: true,
       ref: 'User',
     },
+    clientId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Client',
+      index: true,
+    },
     name: {
       type: String,
       required: true,

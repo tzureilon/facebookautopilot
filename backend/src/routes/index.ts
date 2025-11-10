@@ -5,10 +5,12 @@ import campaignRoutes from './campaign.routes';
 import analyticsRoutes from './analytics.routes';
 import abtestRoutes from './abtest.routes';
 import alertRoutes from './alert.routes';
+import clientRoutes from './client.routes';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/clients', clientRoutes);
 router.use('/questionnaire', questionnaireRoutes);
 router.use('/campaigns', campaignRoutes);
 router.use('/analytics', analyticsRoutes);

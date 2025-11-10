@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import Layout from '@/components/Layout';
 import { useAuthStore } from '@/store/authStore';
+import { useClientStore } from '@/store/clientStore';
 import apiClient from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -23,6 +24,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 export default function DashboardPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { selectedClientId, getSelectedClient } = useClientStore();
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,11 +35,13 @@ export default function DashboardPage() {
     }
 
     loadDashboard();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, selectedClientId]);
 
   const loadDashboard = async () => {
     try {
-      const data = await apiClient.getDashboard();
+      setIsLoading(true);
+      const params = selectedClientId ? { clientId: selectedClientId } : {};
+      const data = await apiClient.getDashboard(params);
       setDashboardData(data);
     } catch (error: any) {
       toast.error('Failed to load dashboard');
@@ -45,6 +49,8 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   };
+
+  const selectedClient = getSelectedClient();
 
   if (isLoading) {
     return (
@@ -70,7 +76,20 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          {selectedClient && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+              <p className="text-sm text-gray-600">Viewing data for:</p>
+              <p className="font-semibold text-blue-900">{selectedClient.name}</p>
+            </div>
+          )}
+          {!selectedClient && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2">
+              <p className="text-sm font-medium text-gray-700">All Clients View</p>
+            </div>
+          )}
+        </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

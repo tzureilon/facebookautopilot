@@ -41,6 +41,11 @@ const AdSchema = new Schema<IAd>(
       required: true,
       ref: 'AdSet',
     },
+    clientId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Client',
+      index: true,
+    },
     metaAdId: String,
     name: { type: String, required: true },
     status: {
@@ -90,6 +95,11 @@ const AdSetSchema = new Schema<IAdSet>(
       required: true,
       ref: 'Campaign',
     },
+    clientId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Client',
+      index: true,
+    },
     metaAdSetId: String,
     name: { type: String, required: true },
     status: {
@@ -124,6 +134,11 @@ const CampaignSchema = new Schema<ICampaign>(
       type: String,
       required: true,
       ref: 'User',
+    },
+    clientId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Client',
+      index: true,
     },
     metaCampaignId: String,
     name: { type: String, required: true },

@@ -44,9 +44,16 @@ export class AnalyticsController {
   async getDashboard(req: AuthRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
+      const { clientId } = req.query;
 
-      // Get all campaigns
-      const campaigns = await CampaignModel.find({ userId, status: { $ne: 'DELETED' } });
+      // Build query
+      const query: any = { userId, status: { $ne: 'DELETED' } };
+      if (clientId) {
+        query.clientId = clientId;
+      }
+
+      // Get campaigns (filtered by client if specified)
+      const campaigns = await CampaignModel.find(query);
 
       if (campaigns.length === 0) {
         res.json({
