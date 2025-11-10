@@ -127,16 +127,40 @@ export class AnalyticsController {
         return date.toISOString().split('T')[0];
       });
 
+      // Fetch metrics for the last 7 days
+      const startDate = last7Days[0];
+      const endDate = last7Days[last7Days.length - 1];
+
+      const dailyMetrics = await CampaignMetricsModel.find({
+        campaignId: { $in: campaignIds },
+        dateStart: { $gte: startDate, $lte: endDate },
+      });
+
+      // Aggregate metrics by date
+      const metricsMap = new Map<string, { spend: number; clicks: number }>();
+
+      dailyMetrics.forEach(metric => {
+        const date = metric.dateStart;
+        const existing = metricsMap.get(date) || { spend: 0, clicks: 0 };
+        existing.spend += metric.spend;
+        existing.clicks += metric.clicks;
+        metricsMap.set(date, existing);
+      });
+
+      // Map data to last 7 days
+      const spendData = last7Days.map(date => metricsMap.get(date)?.spend || 0);
+      const clicksData = last7Days.map(date => metricsMap.get(date)?.clicks || 0);
+
       const chartData = {
         labels: last7Days,
         datasets: [
           {
             label: 'Spend',
-            data: last7Days.map(() => Math.random() * 100), // TODO: Get real data
+            data: spendData,
           },
           {
             label: 'Clicks',
-            data: last7Days.map(() => Math.random() * 500), // TODO: Get real data
+            data: clicksData,
           },
         ],
       };
