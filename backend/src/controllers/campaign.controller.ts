@@ -72,7 +72,7 @@ export class CampaignController {
           adSetData.name,
           adSetData.optimizationGoal,
           adSetData.billingEvent,
-          adSetData.dailyBudget,
+          adSetData.dailyBudget || 0,
           adSetData.targeting,
           'PAUSED'
         );
@@ -89,7 +89,7 @@ export class CampaignController {
           targeting: adSetData.targeting,
         });
 
-        campaign.adSets.push(adSet._id);
+        campaign.adSets.push(adSet._id as any);
 
         // Create ads for this ad set
         const adsForThisAdSet = structure.ads.filter(ad => ad.adSetIndex === i);
@@ -125,7 +125,7 @@ export class CampaignController {
             creative: adData.creative,
           });
 
-          adSet.ads.push(ad._id);
+          adSet.ads.push(ad._id as any);
         }
 
         await adSet.save();

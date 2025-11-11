@@ -70,6 +70,7 @@ export interface MetaApiCredentials {
 export interface Questionnaire {
   id: string;
   userId: string;
+  clientId?: string;
   businessInfo: BusinessInfo;
   targetAudience: TargetAudience;
   budget: Budget;

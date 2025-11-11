@@ -131,7 +131,7 @@ export class AuthController {
         role: user.role,
       },
       jwtSecret,
-      { expiresIn: jwtExpire }
+      { expiresIn: jwtExpire } as jwt.SignOptions
     );
   }
 }
